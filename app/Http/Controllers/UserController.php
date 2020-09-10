@@ -16,8 +16,8 @@ class UserController extends Controller
                     'message' => ['These credentials do not match our records.']
                 ], 404);
             }
-        
-            $token = $user->createToken('my-app-token')->plainTextToken;
+            $abilities = $request->abilities;        
+            $token = $user->createToken('my-app-token',[$abilities])->plainTextToken;
             $response = [
                 'user' => $user,
                 'token' => $token
@@ -27,6 +27,11 @@ class UserController extends Controller
 
     function details(Request $request)
     {
-        return User::get();
+        if(auth()->user()->tokenCan('view')){
+            return User::get();
+        }else{
+            return "no";
+        }
+        
     }
 }

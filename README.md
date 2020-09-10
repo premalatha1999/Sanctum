@@ -1,61 +1,76 @@
-<p align="center"><img src="https://res.cloudinary.com/dtfbvvkyp/image/upload/v1566331377/laravel-logolockup-cmyk-red.svg" width="400"></p>
+### Steps to run
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+```
+git clone https://github.com/premalatha1999/Sanctum.git
+cd Sanctum
+composer update
+Set your environment variables
+php artisan migrate
+Now you have a basic setup for sanctum . create a authorization tokens for your user and utilize your other api services securely by using authorization tokens .
 
-## About Laravel
+```
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Sanctum For Api Tokens
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Laravel Sanctum provides a featherweight authentication system for SPAs (single page applications), 	mobile applications, and simple, token based APIs.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Sanctum allows each user of your application to generate multiple API tokens for their account.
 
-## Learning Laravel
+These tokens may be granted abilities / scopes which specify which actions the tokens are allowed to perform.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Implement Sanctum For Api Tokens
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1 . create a new laravel 7 project
+2 . composer update
+3 . composer require laravel/sanctum
+4 . php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+5 . php artisan migrate
+6 . add the follwing in app/Http/Kernel.php
+	
+	use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
-## Laravel Sponsors
+	'api' => [
+	    EnsureFrontendRequestsAreStateful::class,
+	    'throttle:60,1',
+	    \Illuminate\Routing\Middleware\SubstituteBindings::class,
+	],
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+7 . Add following in user model 
 
-### Premium Partners
+	use Laravel\Sanctum\HasApiTokens;
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[OP.GG](https://op.gg)**
+	class User extends Authenticatable
+	{
+	    use HasApiTokens, Notifiable;
+	}
 
-## Contributing
+8 . Add sanctum middleware to apis
+	
+	Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+	    return $request->user();
+	});
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+9 . Issuing API Tokens
 
-## Code of Conduct
+	$token = $user->createToken('token-name');
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+10 . Token Abilities
 
-## Security Vulnerabilities
+	$token = $user->createToken('token-name', ['server:update'])->plainTextToken;
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+11 . To check abilities
 
-## License
+	if ($user->tokenCan('server:update')) {
+	    //
+	}
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+12 . for delete tokens 
+
+	// Revoke all tokens...
+	$user->tokens()->delete();
+
+	// Revoke the user's current token...
+	$request->user()->currentAccessToken()->delete();
+
+	// Revoke a specific token...
+	$user->tokens()->where('id', $id)->delete();
